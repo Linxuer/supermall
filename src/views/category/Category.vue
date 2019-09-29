@@ -117,7 +117,11 @@
     },
     // 组件创建完之后调用
     created() {
-      
+      // console.log(this.$refs.aaaa)
+      // console.log(document.querySelector('.wrapper'))
+
+      // this.scroll = new BScroll(null/undefined, {
+      // })
     },
     // 组件挂载到页面后调用
     mounted() {
@@ -125,7 +129,16 @@
       // console.log(document.querySelector('.wrapper'))
 
       this.scroll = new BScroll(document.querySelector('.wrapper'), {
+        probeType: 3,
+        pullUpLoad: true
+      })
 
+      this.scroll.on('scroll', (position) => {
+        // console.log(position)
+      })
+
+      this.scroll.on('pullingUp', () => {
+        console.log('上拉加载更多')
       })
     },
   }
