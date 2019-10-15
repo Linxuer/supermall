@@ -6,8 +6,8 @@
                   ref="tabControl1"
                   class="tab-control" v-show="isTabFixed"/>
     <scroll class="content"
-            ref="scroll" 
-            :probe-type="3" 
+            ref="scroll"
+            :probe-type="3"
             @scroll="contentScroll"
             :pull-up-load="true"
             @pullingUp="loadMore">
@@ -71,12 +71,11 @@
         return this.goods[this.currentType].list
       }
     },
-    destroyed() {
-      console.log('home destroyed')
-    },
     activated() {
+      this.$refs.scroll.refresh()
+
       this.$refs.scroll.scrollTo(0, this.saveY, 0)
-      
+
       this.$refs.scroll.refresh()
     },
     deactivated() {
@@ -130,7 +129,7 @@
       },
       loadMore() {
         this.getHomeGoods(this.currentType)
-        
+
       },
       swiperImageLoad() {
         this.tabOffsetTop = this.$refs.tabControl2.$el.offsetTop
@@ -148,7 +147,7 @@
         const page = this.goods[type].page + 1
         getHomeGoods(type, page).then(res => {
           this.goods[type].list.push(...res.data.list)
-          this.goods[type].page += 1 
+          this.goods[type].page += 1
 
           // 完成上拉加载更多
           this.$refs.scroll.finishPullUp()
