@@ -1,14 +1,17 @@
 <template>
   <div id="detail">
-    <detail-nav-bar class="detail-nav"/>
-    <scroll class="content" ref="scroll">
+    <detail-nav-bar class="detail-nav" @titleClick="titleClick" ref="nav"/>
+    <scroll class="content"
+            ref="scroll"
+            :probe-type="3"
+            @scroll="contentScroll">
       <detail-swiper :top-images="topImages"/>
       <detail-base-info :goods="goods"/>
       <detail-shop-info :shop="shop"/>
       <detail-goods-info :detail-info="detailInfo" @imageLoad="imageLoad"/>
-      <detail-param-info :param-info="paramInfo"/>
-      <detail-comment-info :comment-info="commentInfo"/>
-      <goods-list :goods="recommends"/>
+      <detail-param-info ref="params" :param-info="paramInfo"/>
+      <detail-comment-info ref="comment" :comment-info="commentInfo"/>
+      <goods-list ref="recommend" :goods="recommends"/>
     </scroll>
   </div>
 </template>
@@ -53,6 +56,9 @@
         paramInfo: {},
         commentInfo: {},
         recommends: [],
+        themeTopYs: [],
+        getThemeTopY: null,
+        currentIndex: 0
       }
     },
     created() {
@@ -84,14 +90,43 @@
         if (data.rate.cRate !== 0) {
           this.commentInfo = data.rate.list[0]
         }
+
+        // // 等上面的数据都加载渲染完了会执行下面这个回调
+        // // 但是根据最新的数据，对应的DOM是已经被渲染出来了
+        // // 但是图片依然是没有加载完的
+        // // offsetTop值不对的时候，一般都是因为图片的问题
+        // this.$nextTick(() => {
+        //   this.themeTopYs = []
+      
+        //   this.themeTopYs.push(0)
+        //   this.themeTopYs.push(this.$refs.params.$el.offsetTop)
+        //   this.themeTopYs.push(this.$refs.comment.$el.offsetTop)
+        //   this.themeTopYs.push(this.$refs.recommend.$el.offsetTop)
+
+        //   console.log(this.themeTopYs)
+        // })
       })
 
       // 3.请求推荐数据
       getRecommend().then(res => {
         this.recommends = res.data.list
       })
+
+      // 4.给getThemeTopY赋值(进行防抖)
+      this.getThemeTopY = debounce(() => {
+        this.themeTopYs = []
+        this.themeTopYs.push(0)
+        this.themeTopYs.push(this.$refs.params.$el.offsetTop)
+        this.themeTopYs.push(this.$refs.comment.$el.offsetTop)
+        this.themeTopYs.push(this.$refs.recommend.$el.offsetTop)
+        this.themeTopYs.push(Number.MAX_VALUE)
+
+        console.log(this.themeTopYs)
+      }, 100)
     },
     mounted() {
+    },
+    updated() {
     },
     destroyed() {
       this.$bus.$off('itemImageLoad', this.itemImgListener)
@@ -100,6 +135,28 @@
       imageLoad() {
         // this.$refs.scroll.refresh()
         this.refresh()
+        this.getThemeTopY()
+      },
+      titleClick(index) {
+        // console.log(index)
+        this.$refs.scroll.scrollTo(0, -this.themeTopYs[index], 200)
+      },
+      contentScroll(position) {
+        // 1.获取Y值
+        const positionY = -position.y
+
+        // 2.positionY和主题中的值进行对比
+        let length = this.themeTopYs.length
+        for(let i = 0; i<length-1; i++) {
+          // if(this.currentIndex !== i && ((i < length - 1 && positionY >= this.themeTopYs[i] && positionY < this.themeTopYs[i+1]) || (i === length - 1 && positionY >= this.themeTopYs[i]))) {
+          //   this.currentIndex = i
+          //   this.$refs.nav.currentIndex = this.currentIndex
+          // }
+          if(this.currentIndex !== i && (positionY >= this.themeTopYs[i] && positionY < this.themeTopYs[i+1])) {
+            this.currentIndex = i
+            this.$refs.nav.currentIndex = this.currentIndex
+          }
+        }
       }
     }
   }
